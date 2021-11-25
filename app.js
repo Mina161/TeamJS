@@ -14,9 +14,23 @@ app.get('/', function(req,res){
   res.render("login");
 });
 
+app.post('/', async function(req, res){
+  var user = {username: req.body.username, password: req.body.password}
+  if (await isUser(user) !== null) {
+    res.render("home");
+}
+  else (res.render("login"))
+});
+
 app.get('/registration', function(req,res){
   res.render("registration");
 });
+
+app.post('/register', async function(req, res){
+  var user = {username: req.body.username, password: req.body.password}
+  await create(user)
+  res.render("home")
+})
 
 app.get('/books', function(req,res){
   res.render("books");
@@ -65,5 +79,31 @@ app.get('/sun', function(req,res){
 app.get('/tennis', function(req,res){
   res.render("tennis");
 });
+
+//Mongodb consts
+const { MongoClient } = require('mongodb');
+const uri = "mongodb+srv://admin:admin@cluster0.hjoec.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+//Mongodb connection
+async function conn() {
+  await client.connect();
+  client.close();
+}
+
+//Create user
+async function create(user) {
+  await client.connect();
+  await client.db("projectdb").collection("users").insertOne(user);
+  client.close();
+}
+
+//login user
+async function isUser(user) {
+  await client.connect();
+  var found = await client.db("projectdb").collection("users").findOne(user)
+  client.close();
+  return found;
+}
 
 app.listen(3000);
