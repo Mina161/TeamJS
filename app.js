@@ -14,4 +14,56 @@ app.get('/', function(req,res){
   res.render("login");
 });
 
+app.get('/registration', function(req,res){
+  res.render("registration");
+});
+
+app.get('/books', function(req,res){
+  res.render("books");
+});
+
+app.get('/boxing', function(req,res){
+  res.render("boxing");
+});
+
+app.get('/cart', function(req,res){
+  res.render("cart");
+});
+
+app.get('/galaxy', function(req,res){
+  res.render("galaxy");
+});
+
+app.get('/home', function(req,res){
+  res.render("home");
+});
+
+app.get('/iphone', function(req,res){
+  res.render("iphone");
+});
+
+app.get('/leaves', function(req,res){
+  res.render("leaves");
+});
+
+app.get('/phones', function(req,res){
+  res.render("phones");
+});
+
+app.get('/searchresults', function(req,res){
+  res.render("searchresults");
+});
+
+app.get('/sports', function(req,res){
+  res.render("sports");
+});
+
+app.get('/sun', function(req,res){
+  res.render("sun");
+});
+
+app.get('/tennis', function(req,res){
+  res.render("tennis");
+});
+
 app.listen(3000);
