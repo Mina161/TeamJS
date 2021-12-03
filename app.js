@@ -95,29 +95,40 @@ app.post("/register", async function (req, res) {
   created ? res.render("home") : res.render("registration");
 });
 
-app.post("/boxing", function (req, res) {
-  addToCart({name:"Boxing Bag", ref:"boxing"})
+app.post("/boxing", async function (req, res) {
+  await addToCart({name:"Boxing Bag", ref:"boxing"})
+  res.render("cart", {cart: appUser.cart})
 });
 
-app.post("/galaxy", function (req, res) {
-  addToCart({name:"Galaxy S21 Ultra", ref:"galaxy"})
+app.post("/galaxy", async function (req, res) {
+  await addToCart({name:"Galaxy S21 Ultra", ref:"galaxy"})
+  res.render("cart", {cart: appUser.cart})
 });
 
-app.post("/iphone", function (req, res) {
-  addToCart({name:"iPhone 13 Pro", ref:"iphone"})
+app.post("/iphone", async function (req, res) {
+  await addToCart({name:"iPhone 13 Pro", ref:"iphone"})
+  res.render("cart", {cart: appUser.cart})
 });
 
-app.post("/leaves", function (req, res) {
-  addToCart({name:"Leaves of Grass", ref:"leaves"})
+app.post("/leaves", async function (req, res) {
+  await addToCart({name:"Leaves of Grass", ref:"leaves"})
+  res.render("cart", {cart: appUser.cart})
 });
 
-app.post("/sun", function (req, res) {
-  addToCart({name:"The Sun and Her Flowers", ref:"sun"})
+app.post("/sun", async function (req, res) {
+  await addToCart({name:"The Sun and Her Flowers", ref:"sun"})
+  res.render("cart", {cart: appUser.cart})
 });
 
-app.post("/tennis", function (req, res) {
-  addToCart({name:"Tennis Racket", ref:"tennis"})
+app.post("/tennis", async function (req, res) {
+  await addToCart({name:"Tennis Racket", ref:"tennis"})
+  res.render("cart", {cart: appUser.cart})
 });
+
+app.post("/search", async function(req,res){
+  var results = await search(req.body.Search);
+  res.render("searchresults",{results: results})
+})
 
 //App user and details
 var appUser = null;
@@ -131,12 +142,6 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
 });
 
-//Mongodb connection
-async function conn() {
-  await client.connect();
-  client.close();
-}
-
 //Create user
 async function create(user) {
   await client.connect();
@@ -148,19 +153,15 @@ async function create(user) {
     await client.db("projectdb").collection("users").insertOne({...user, cart: []});
     appUser = await client.db("projectdb").collection("users").findOne(user);
   }
-  client.close();
   return foundBefore === null ? true : false;
 }
 
 //Login user
 async function isUser(user) {
   await client.connect();
-  var found = await client.db("projectdb").collection("users").findOne(user);
-  client.close();
-  if (found !== null) {
-    appUser = found;
-  }
-  return found !== null ? true : false;
+  appUser = await client.db("projectdb").collection("users").findOne(user);
+  console.log(appUser)
+  return appUser !== null ? true : false;
 }
 
 //Update Cart
@@ -169,9 +170,19 @@ async function addToCart(item) {
   cart = appUser.cart;
   cart.push(item);
   await client.db("projectdb").collection("users").updateOne({_id: appUser._id}, { $set: {cart: cart } });
-  client.close();
+  await client.close();
   appUser.cart = cart;
-  return;
+}
+
+//Search for items
+async function search(query){
+  await client.connect();
+  var string = ".*"+query+".*"
+  console.log(string)
+  var results = await client.db("projectdb").collection("items").find({name: new RegExp(string,'i')}).toArray();
+  await client.close();
+  console.log(results);
+  return results;
 }
 
 app.listen(3000);
