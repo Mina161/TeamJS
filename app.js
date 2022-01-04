@@ -97,7 +97,6 @@ app.post("/", async function (req, res) {
   var user = { username: req.body.username, password: req.body.password };
   thisSession = req.session;
   if (await isUser(user)) {
-    thisSession.user = user.username;
     res.render("home");
   } else res.render("login");
 });
@@ -217,3 +216,5 @@ async function search(query) {
 }
 
 app.listen(process.env.PORT || 3000);
+
+module.exports = app;
