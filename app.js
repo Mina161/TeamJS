@@ -24,6 +24,7 @@ var thisSession;
 
 //GET Requests
 app.get("/", function (req, res) {
+  thisSession = req.session;
   res.render("login");
 });
 
