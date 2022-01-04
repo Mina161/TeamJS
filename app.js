@@ -112,6 +112,7 @@ const pages = [
 function renderPage(page) {
   app.get(`/${page}`, (_, res) => {
     if (thisSession.user === null) res.render("login");
+    res.render(page);
   });
 }
 
