@@ -1,6 +1,6 @@
 var express = require("express");
 var path = require("path");
-var alerts = require("alert");
+const alert = require("alert");
 const cookieParser = require("cookie-parser");
 const sessions = require('express-session');
 var app = express();
@@ -113,9 +113,8 @@ app.post('/search', async (req, res) => {
 
 //Mongodb consts
 const { MongoClient } = require("mongodb");
-const alert = require("alert");
 const uri =
-  "mongodb+srv://admin:admin@cluster0.hjoec.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+  "mongodb+srv://admin:"+process.env.DBPASS+"@cluster0.hjoec.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -159,7 +158,7 @@ async function isUser(user, session) {
 async function addToCart(item, session) {
   cart = session.user.cart;
   if (inCart(item, session)) {
-    alerts("Item already in cart")
+    alert("Item already in cart")
     return false;
   } else {
     await client.connect();
