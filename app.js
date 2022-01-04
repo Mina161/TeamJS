@@ -129,7 +129,7 @@ async function create(user, session) {
     .db("projectdb")
     .collection("users")
     .findOne({ username: user.username });
-  if (foundBefore === null && user.password.length !== 0) {
+  if (foundBefore === null && user.password.length !== 0 && user.username.length !== 0) {
     await client
       .db("projectdb")
       .collection("users")
@@ -138,8 +138,8 @@ async function create(user, session) {
     session.save();
     created = true;
     await client.close();
-  } else if(user.password.length === 0) {
-    alert("Password cannot be empty")
+  } else if(user.password.length === 0 || user.username.length === 0) {
+    alert("Password and username cannot be empty")
   } else {
     alert("User already exists")
   }
