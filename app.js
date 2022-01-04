@@ -41,12 +41,13 @@ const pages = [
   "sports",
   "sun",
   "tennis",
+  "searchresults"
 ];
 
 function renderPage(page) {
   app.get(`/${page}`, (req, res) => {
-    if (req.session.user === null) res.render("login");
-    res.render(page);
+    if (req.session.user === undefined) res.render("login");
+    else res.render(page);
   });
 }
 pages.forEach(renderPage);
@@ -59,14 +60,14 @@ app.post("/", async function (req, res) {
     console.log(req.session);
     res.render("home");
   } else {
-    alert("Wrong username or password")
+    res.status(400).send("Wrong username or password");
   }
 });
 
 app.post("/register", async function (req, res) {
   var user = { username: req.body.username, password: req.body.password };
-  var created = await create(user, req.session);
-  created ? res.render("home") : res.render("registration");
+  var created = await create(user, res, req.session);
+  if(created) res.render("home");
 });
 
 app.post('/search', async (req, res) => {
@@ -90,17 +91,17 @@ app.post("/viewCart", async (req, res) => {
 
 //Mongodb consts
 const { MongoClient } = require("mongodb");
-// const uri =
-//   "mongodb+srv://admin:admin@cluster0.hjoec.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
 const uri =
-  "mongodb+srv://teamjs:Antiquity-Halt-Surfacing0@cluster0.zuszw.mongodb.net/NetworksProject?retryWrites=true&w=majority";
+  "mongodb+srv://admin:admin@cluster0.hjoec.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+// const uri =
+//   "mongodb+srv://teamjs:Antiquity-Halt-Surfacing0@cluster0.zuszw.mongodb.net/NetworksProject?retryWrites=true&w=majority";
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
 
 //Create user
-async function create(user, session) {
+async function create(user, res, session) {
   await client.connect();
   var created = false;
   var foundBefore = await client
@@ -118,9 +119,9 @@ async function create(user, session) {
     created = true;
     await client.close();
   } else if(user.password.length === 0 || user.username.length === 0) {
-    alert("Password and username cannot be empty")
+    res.status(400).send("Username or password cannot be empty");
   } else {
-    alert("User already exists")
+    res.status(400).send("User already exists");
   }
   return created
 }
@@ -136,7 +137,6 @@ async function isUser(user, session) {
 
 async function addToCart(item, res, session) {
   await client.connect();
-  console.log(session.user.username)
   try {
     await client
       .db("projectdb")
