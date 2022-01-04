@@ -169,12 +169,12 @@ async function isUser(user) {
 
 //Update Cart
 async function addToCart(item) {
-  await client.connect();
   cart = appUser.cart;
   if (inCart(item)) {
     alerts("Item already in cart")
     return false;
   } else {
+    await client.connect();
     cart.push(item);
     await client
       .db("projectdb")
