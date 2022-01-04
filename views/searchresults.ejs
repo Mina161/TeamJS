@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <style>
         body {
@@ -21,6 +22,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-2">
         <a class="navbar-brand" style="color: rgb(191, 255, 161)">Search Results</a>
@@ -39,18 +41,23 @@
         </div>
     </nav>
     <div class="d-flex flex-wrap">
-        <% results.forEach(function(item){ %>
+        <div class="d-flex flex-wrap">
+            <% searchResults.forEach(function(element) { %>
             <div class="m-2">
-                <img id="image" src="/<%= item.ref %>.jpg" width="193" height="300">
+                <img id="image" src="/<%= element.ref %>.jpg" width="193" height="300">
                 <br>
-                <label style="color: white;" id ="label1" class="ml-4 my-2 text-center"><%= item.name %> </label>
+                <label id="label1" class="ml-4 my-2"><%= element.name %></label>
                 <br>
-                <button onclick="location.href = '/<%= item.ref %>';" id="<%= item.ref %>" class="btn btn-secondary ml-3"> View </button>
+                <button onclick="location.href = '/<%= element.ref %>';" id="<%= element.ref %>"
+                    class="btn btn-secondary ml-3"> View </button>
             </div>
             <% }) %>
-        <% if (results.length === 0) { %>
-            <h1>No Results</h1>
-        <% } %>
+            <% if (searchResults.length === 0) { %>
+            <h1>No Results Found</h1>
+
+            <% } %>
+        </div>
     </div>
 </body>
+
 </html>

@@ -15,73 +15,6 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(cookieParser());
 
 let thisSession;
-
-// //GET Requests
-// app.get("/", function (req, res) {
-//   thisSession = req.session;
-//   console.log(req.session);
-//   res.render("login");
-// });
-
-// app.get("/registration", function (req, res) {
-//   res.render("registration");
-// });
-
-// app.get("/books", function (req, res) {
-//   if (thisSession.user === null) res.render("login");
-//   res.render("books");
-// });
-
-// app.get("/boxing", function (req, res) {
-//   if (thisSession.user === null) res.render("login");
-//   res.render("boxing");
-// });
-
-// app.get("/galaxy", function (req, res) {
-//   if (thisSession.user === null) res.render("login");
-//   res.render("galaxy");
-// });
-
-// app.get("/home", function (req, res) {
-//   if (thisSession.user === null) res.render("login");
-//   res.render("home");
-// });
-
-// app.get("/iphone", function (req, res) {
-//   if (thisSession.user === null) res.render("login");
-//   res.render("iphone");
-// });
-
-// app.get("/leaves", function (req, res) {
-//   if (thisSession.user === null) res.render("login");
-//   res.render("leaves");
-// });
-
-// app.get("/phones", function (req, res) {
-//   if (thisSession.user === null) res.render("login");
-//   res.render("phones");
-// });
-
-// app.get("/searchresults", function (req, res) {
-//   if (thisSession.user === null) res.render("login");
-//   res.render("searchresults");
-// });
-
-// app.get("/sports", function (req, res) {
-//   if (thisSession.user === null) res.render("login");
-//   res.render("sports");
-// });
-
-// app.get("/sun", function (req, res) {
-//   if (thisSession.user === null) res.render("login");
-//   res.render("sun");
-// });
-
-// app.get("/tennis", function (req, res) {
-//   if (thisSession.user === null) res.render("login");
-//   res.render("tennis");
-// });
-
 app.use(
   sessions({
     resave: false,
@@ -109,6 +42,7 @@ const pages = [
   "sun",
   "tennis",
 ];
+
 function renderPage(page) {
   app.get(`/${page}`, (_, res) => {
     if (thisSession.user === null) res.render("login");
@@ -170,10 +104,11 @@ app.post("/tennis", async function (req, res) {
   if(added) res.render("cart", { cart: thisSession.user.cart });
 });
 
-app.post("/search", async function (req, res) {
-  var results = await search(req.body.Search);
-  res.render("searchresults", { results: results });
-});
+app.post('/search', async (req, res) => {
+  let query = req.body.Search;
+  let results = await searchFunction(query);
+  res.render('searchresults',{searchResults: results});
+})
 
 //Mongodb consts
 const { MongoClient } = require("mongodb");
@@ -236,14 +171,9 @@ function inCart(item) {
 }
 
 //Search for items
-async function search(query) {
+async function searchFunction(query){
   await client.connect();
-  var string = ".*" + query + ".*";
-  var results = await client
-    .db("projectdb")
-    .collection("items")
-    .find({ name: new RegExp(string, "i") })
-    .toArray();
+  let results = await client.db('projectdb').collection('items').find({name: {$regex: new RegExp('.'+query+'.', 'i')}}).toArray();
   await client.close();
   return results;
 }
