@@ -46,7 +46,7 @@ const pages = [
 
 function renderPage(page) {
   app.get(`/${page}`, (req, res) => {
-    if (req.session.user === undefined) res.render("login");
+    if (req.session.user === undefined) res.redirect("/");
     else res.render(page);
   });
 }
