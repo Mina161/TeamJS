@@ -13,84 +13,114 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(cookieParser());
-app.use(sessions({
-    secret: process.env.SECURE_KEY,
-    saveUninitialized:true,
-    cookie: { maxAge: 1000*60*60*6 },
-    resave: false 
-}));
 
-var thisSession;
+let thisSession;
 
-//GET Requests
-app.get("/", function (req, res) {
+// //GET Requests
+// app.get("/", function (req, res) {
+//   thisSession = req.session;
+//   console.log(req.session);
+//   res.render("login");
+// });
+
+// app.get("/registration", function (req, res) {
+//   res.render("registration");
+// });
+
+// app.get("/books", function (req, res) {
+//   if (thisSession.user === null) res.render("login");
+//   res.render("books");
+// });
+
+// app.get("/boxing", function (req, res) {
+//   if (thisSession.user === null) res.render("login");
+//   res.render("boxing");
+// });
+
+// app.get("/galaxy", function (req, res) {
+//   if (thisSession.user === null) res.render("login");
+//   res.render("galaxy");
+// });
+
+// app.get("/home", function (req, res) {
+//   if (thisSession.user === null) res.render("login");
+//   res.render("home");
+// });
+
+// app.get("/iphone", function (req, res) {
+//   if (thisSession.user === null) res.render("login");
+//   res.render("iphone");
+// });
+
+// app.get("/leaves", function (req, res) {
+//   if (thisSession.user === null) res.render("login");
+//   res.render("leaves");
+// });
+
+// app.get("/phones", function (req, res) {
+//   if (thisSession.user === null) res.render("login");
+//   res.render("phones");
+// });
+
+// app.get("/searchresults", function (req, res) {
+//   if (thisSession.user === null) res.render("login");
+//   res.render("searchresults");
+// });
+
+// app.get("/sports", function (req, res) {
+//   if (thisSession.user === null) res.render("login");
+//   res.render("sports");
+// });
+
+// app.get("/sun", function (req, res) {
+//   if (thisSession.user === null) res.render("login");
+//   res.render("sun");
+// });
+
+// app.get("/tennis", function (req, res) {
+//   if (thisSession.user === null) res.render("login");
+//   res.render("tennis");
+// });
+
+app.use(
+  sessions({
+    resave: false,
+    saveUninitialized: false,
+    secret: process.env.SECURE_KEY || "hihello",
+  })
+);
+
+app.get("/", (req, res) => {
   thisSession = req.session;
   res.render("login");
 });
 
-app.get("/registration", function (req, res) {
-  res.render("registration");
-});
-
-app.get("/books", function (req, res) {
-  if (thisSession.user === null) res.render("login");
-  res.render("books");
-});
-
-app.get("/boxing", function (req, res) {
-  if (thisSession.user === null) res.render("login");
-  res.render("boxing");
-});
+const pages = [
+  "books",
+  "boxing",
+  "galaxy",
+  "home",
+  "iphone",
+  "leaves",
+  "phones",
+  "registration",
+  "searchresults",
+  "sports",
+  "sun",
+  "tennis",
+];
+function renderPage(page) {
+  app.get(`/${page}`, (_, res) => {
+    if (thisSession.user === null) res.render("login");
+  });
+}
 
 app.get("/cart", function (req, res) {
   if (thisSession.user === null) res.render("login");
   res.render("cart", { cart: thisSession.user.cart });
 });
 
-app.get("/galaxy", function (req, res) {
-  if (thisSession.user === null) res.render("login");
-  res.render("galaxy");
-});
-
-app.get("/home", function (req, res) {
-  if (thisSession.user === null) res.render("login");
-  res.render("home");
-});
-
-app.get("/iphone", function (req, res) {
-  if (thisSession.user === null) res.render("login");
-  res.render("iphone");
-});
-
-app.get("/leaves", function (req, res) {
-  if (thisSession.user === null) res.render("login");
-  res.render("leaves");
-});
-
-app.get("/phones", function (req, res) {
-  if (thisSession.user === null) res.render("login");
-  res.render("phones");
-});
-
-app.get("/searchresults", function (req, res) {
-  if (thisSession.user === null) res.render("login");
-  res.render("searchresults");
-});
-
-app.get("/sports", function (req, res) {
-  if (thisSession.user === null) res.render("login");
-  res.render("sports");
-});
-
-app.get("/sun", function (req, res) {
-  if (thisSession.user === null) res.render("login");
-  res.render("sun");
-});
-
-app.get("/tennis", function (req, res) {
-  if (thisSession.user === null) res.render("login");
-  res.render("tennis");
-});
+pages.forEach(renderPage);
 
 //POST Requests
 
@@ -98,6 +128,7 @@ app.post("/", async function (req, res) {
   var user = { username: req.body.username, password: req.body.password };
   thisSession = req.session;
   if (await isUser(user)) {
+    console.log(thisSession);
     res.render("home");
   } else res.render("login");
 });
@@ -146,7 +177,7 @@ app.post("/search", async function (req, res) {
 //Mongodb consts
 const { MongoClient } = require("mongodb");
 const uri =
-  "mongodb+srv://admin:"+process.env.DBPASS+"@cluster0.hjoec.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+  "mongodb+srv://admin:admin@cluster0.hjoec.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
