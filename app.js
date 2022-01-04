@@ -18,7 +18,7 @@ app.use(
   sessions({
     resave: true,
     saveUninitialized: true,
-    secret: process.env.SECURE_KEY || "hihello",
+    secret: process.env.SECURE_KEY,
   })
 );
 
@@ -38,7 +38,6 @@ const pages = [
   "iphone",
   "leaves",
   "phones",
-  "searchresults",
   "sports",
   "sun",
   "tennis",
@@ -65,7 +64,9 @@ app.post("/", async function (req, res) {
   if (await isUser(user, req.session)) {
     console.log(req.session);
     res.render("home");
-  } else res.render("login");
+  } else {
+    alert("Wrong username or password")
+  }
 });
 
 app.post("/register", async function (req, res) {
@@ -112,6 +113,7 @@ app.post('/search', async (req, res) => {
 
 //Mongodb consts
 const { MongoClient } = require("mongodb");
+const alert = require("alert");
 const uri =
   "mongodb+srv://admin:admin@cluster0.hjoec.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
 const client = new MongoClient(uri, {
@@ -122,19 +124,26 @@ const client = new MongoClient(uri, {
 //Create user
 async function create(user, session) {
   await client.connect();
+  var created = false;
   var foundBefore = await client
     .db("projectdb")
     .collection("users")
     .findOne({ username: user.username });
-  if (foundBefore === null) {
+  if (foundBefore === null && user.password.length !== 0) {
     await client
       .db("projectdb")
       .collection("users")
       .insertOne({ ...user, cart: []});
     session.user = await client.db("projectdb").collection("users").findOne(user);
     session.save();
+    created = true;
+    await client.close();
+  } else if(user.password.length === 0) {
+    alert("Password cannot be empty")
+  } else {
+    alert("User already exists")
   }
-  return foundBefore === null ? true : false;
+  return created
 }
 
 //Login user
@@ -142,6 +151,7 @@ async function isUser(user, session) {
   await client.connect();
   session.user = await client.db("projectdb").collection("users").findOne(user);
   session.save();
+  await client.close();
   return session.user !== null ? true : false;
 }
 
@@ -175,7 +185,7 @@ function inCart(item, session) {
 //Search for items
 async function searchFunction(query){
   await client.connect();
-  let results = await client.db('projectdb').collection('items').find({name: {$regex: new RegExp('.'+query+'.', 'i')}}).toArray();
+  let results = await client.db('projectdb').collection('items').find({name: {$regex: new RegExp('.*'+query+'.*', 'i')}}).toArray();
   await client.close();
   return results;
 }
