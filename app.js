@@ -24,7 +24,6 @@ app.use(
 );
 
 app.get("/", (req, res) => {
-  thisSession = req.session;
   res.render("login");
 });
 
@@ -70,7 +69,7 @@ app.post("/", async function (req, res) {
 
 app.post("/register", async function (req, res) {
   var user = { username: req.body.username, password: req.body.password };
-  var created = await create(user);
+  var created = await create(user, req.session);
   created ? res.render("home") : res.render("registration");
 });
 
@@ -120,7 +119,7 @@ const client = new MongoClient(uri, {
 });
 
 //Create user
-async function create(user) {
+async function create(user, session) {
   await client.connect();
   var foundBefore = await client
     .db("projectdb")
@@ -130,7 +129,11 @@ async function create(user) {
     await client
       .db("projectdb")
       .collection("users")
-      .insertOne({ ...user, cart: [] });
+      .insertOne({ ...user, cart: []});
+      await client
+      .db("projectdb")
+      .collection("sessions")
+      .insertOne({userName: user.username, userSess: session});
     thisSession.user = await client.db("projectdb").collection("users").findOne(user);
   }
   return foundBefore === null ? true : false;
@@ -139,8 +142,8 @@ async function create(user) {
 //Login user
 async function isUser(user) {
   await client.connect();
+  thisSession = await client.db("projectdb").collection("sessions").findOne({userName: user.username});
   thisSession.user = await client.db("projectdb").collection("users").findOne(user);
-  console.log(thisSession.user);
   return thisSession.user !== null ? true : false;
 }
 
