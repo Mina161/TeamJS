@@ -18,7 +18,7 @@ app.use(
   sessions({
     resave: true,
     saveUninitialized: true,
-    secret: process.env.SECURE_KEY,
+    secret: process.env.SECURE_KEY || "hello",
   })
 );
 
@@ -49,12 +49,6 @@ function renderPage(page) {
     res.render(page);
   });
 }
-
-app.get("/cart", function (req, res) {
-  if (req.session.user === null) res.render("login");
-  res.render("cart", { cart: req.session.user.cart });
-});
-
 pages.forEach(renderPage);
 
 //POST Requests
@@ -81,10 +75,25 @@ app.post('/search', async (req, res) => {
   res.render('searchresults',{searchResults: results});
 })
 
+
+app.post("/viewCart", async (req, res) => {
+  await client.connect();
+  const cartItems = await client
+    .db("projectdb")
+    .collection(req.session.user.username)
+    .find({})
+    .map((item) => item._id)
+    .toArray();
+  res.render("cart", { data: cartItems.join(", ") });
+  await client.close();
+});
+
 //Mongodb consts
 const { MongoClient } = require("mongodb");
+// const uri =
+//   "mongodb+srv://admin:admin@cluster0.hjoec.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
 const uri =
-  "mongodb+srv://admin:"+process.env.DBPASS+"@cluster0.hjoec.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+  "mongodb+srv://teamjs:Antiquity-Halt-Surfacing0@cluster0.zuszw.mongodb.net/NetworksProject?retryWrites=true&w=majority";
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -127,6 +136,7 @@ async function isUser(user, session) {
 
 async function addToCart(item, res, session) {
   await client.connect();
+  console.log(session.user.username)
   try {
     await client
       .db("projectdb")
@@ -142,22 +152,10 @@ async function addToCart(item, res, session) {
 const items = ["boxing", "galaxy", "iphone", "leaves", "sun", "tennis"];
 function addButtonEvent(item) {
   app.post(`/${item}ToCart`, async (req, res) => {
-    await addToCart(item, res, req);
+    await addToCart(item, res, req.session);
   });
 }
 items.forEach(addButtonEvent);
-
-app.post("/viewCart", async (req, res) => {
-  await client.connect();
-  const cartItems = await client
-    .db("projectdb")
-    .collection(req.session.user.username)
-    .find({})
-    .map((item) => item._id)
-    .toArray();
-  res.render("cart", { data: cartItems.join(", ") });
-  await client.close();
-});
 
 //Search for items
 async function searchFunction(query){
