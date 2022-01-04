@@ -47,7 +47,10 @@
                 <br>
                 <button onclick="location.href = '/<%= item.ref %>';" id="<%= item.ref %>" class="btn btn-secondary ml-3"> View </button>
             </div>
-            <% }) %> 
+            <% }) %>
+        <% if (results.length === 0) { %>
+            <h1>No Results</h1>
+        <% } %>
     </div>
 </body>
 </html>
