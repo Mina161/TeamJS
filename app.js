@@ -32,62 +32,62 @@ app.get("/registration", function (req, res) {
 });
 
 app.get("/books", function (req, res) {
-  if (thisSession.username === null) res.render("login");
+  if (thisSession.user === null) res.render("login");
   res.render("books");
 });
 
 app.get("/boxing", function (req, res) {
-  if (thisSession.username === null) res.render("login");
+  if (thisSession.user === null) res.render("login");
   res.render("boxing");
 });
 
 app.get("/cart", function (req, res) {
-  if (thisSession.username === null) res.render("login");
-  res.render("cart", { cart: thisSession.username.cart });
+  if (thisSession.user === null) res.render("login");
+  res.render("cart", { cart: thisSession.user.cart });
 });
 
 app.get("/galaxy", function (req, res) {
-  if (thisSession.username === null) res.render("login");
+  if (thisSession.user === null) res.render("login");
   res.render("galaxy");
 });
 
 app.get("/home", function (req, res) {
-  if (thisSession.username === null) res.render("login");
+  if (thisSession.user === null) res.render("login");
   res.render("home");
 });
 
 app.get("/iphone", function (req, res) {
-  if (thisSession.username === null) res.render("login");
+  if (thisSession.user === null) res.render("login");
   res.render("iphone");
 });
 
 app.get("/leaves", function (req, res) {
-  if (thisSession.username === null) res.render("login");
+  if (thisSession.user === null) res.render("login");
   res.render("leaves");
 });
 
 app.get("/phones", function (req, res) {
-  if (thisSession.username === null) res.render("login");
+  if (thisSession.user === null) res.render("login");
   res.render("phones");
 });
 
 app.get("/searchresults", function (req, res) {
-  if (thisSession.username === null) res.render("login");
+  if (thisSession.user === null) res.render("login");
   res.render("searchresults");
 });
 
 app.get("/sports", function (req, res) {
-  if (thisSession.username === null) res.render("login");
+  if (thisSession.user === null) res.render("login");
   res.render("sports");
 });
 
 app.get("/sun", function (req, res) {
-  if (thisSession.username === null) res.render("login");
+  if (thisSession.user === null) res.render("login");
   res.render("sun");
 });
 
 app.get("/tennis", function (req, res) {
-  if (thisSession.username === null) res.render("login");
+  if (thisSession.user === null) res.render("login");
   res.render("tennis");
 });
 
@@ -97,7 +97,7 @@ app.post("/", async function (req, res) {
   var user = { username: req.body.username, password: req.body.password };
   thisSession = req.session;
   if (await isUser(user)) {
-    thisSession.username = user.username;
+    thisSession.user = user.username;
     res.render("home");
   } else res.render("login");
 });
@@ -110,32 +110,32 @@ app.post("/register", async function (req, res) {
 
 app.post("/boxing", async function (req, res) {
   added = await addToCart({ name: "Boxing Bag", ref: "boxing" });
-  if(added) res.render("cart", { cart: thisSession.username.cart });
+  if(added) res.render("cart", { cart: thisSession.user.cart });
 });
 
 app.post("/galaxy", async function (req, res) {
   added = await addToCart({ name: "Galaxy S21 Ultra", ref: "galaxy" });
-  if(added) res.render("cart", { cart: thisSession.username.cart });
+  if(added) res.render("cart", { cart: thisSession.user.cart });
 });
 
 app.post("/iphone", async function (req, res) {
   added = await addToCart({ name: "iPhone 13 Pro", ref: "iphone" });
-  if(added) res.render("cart", { cart: thisSession.username.cart });
+  if(added) res.render("cart", { cart: thisSession.user.cart });
 });
 
 app.post("/leaves", async function (req, res) {
   added = await addToCart({ name: "Leaves of Grass", ref: "leaves" });
-  if(added) res.render("cart", { cart: thisSession.username.cart });
+  if(added) res.render("cart", { cart: thisSession.user.cart });
 });
 
 app.post("/sun", async function (req, res) {
   added = await addToCart({ name: "The Sun and Her Flowers", ref: "sun" });
-  if(added) res.render("cart", { cart: thisSession.username.cart });
+  if(added) res.render("cart", { cart: thisSession.user.cart });
 });
 
 app.post("/tennis", async function (req, res) {
   added = await addToCart({ name: "Tennis Racket", ref: "tennis" });
-  if(added) res.render("cart", { cart: thisSession.username.cart });
+  if(added) res.render("cart", { cart: thisSession.user.cart });
 });
 
 app.post("/search", async function (req, res) {
@@ -164,7 +164,7 @@ async function create(user) {
       .db("projectdb")
       .collection("users")
       .insertOne({ ...user, cart: [] });
-    thisSession.username = await client.db("projectdb").collection("users").findOne(user);
+    thisSession.user = await client.db("projectdb").collection("users").findOne(user);
   }
   return foundBefore === null ? true : false;
 }
@@ -173,13 +173,13 @@ async function create(user) {
 async function isUser(user) {
   await client.connect();
   thisSession.user = await client.db("projectdb").collection("users").findOne(user);
-  console.log(thisSession.username);
-  return thisSession.username !== null ? true : false;
+  console.log(thisSession.user);
+  return thisSession.user !== null ? true : false;
 }
 
 //Update Cart
 async function addToCart(item) {
-  cart = thisSession.username.cart;
+  cart = thisSession.user.cart;
   if (inCart(item)) {
     alerts("Item already in cart")
     return false;
@@ -189,16 +189,16 @@ async function addToCart(item) {
     await client
       .db("projectdb")
       .collection("users")
-      .updateOne({ _id: thisSession.username._id }, { $set: { cart: cart } });
+      .updateOne({ _id: thisSession.user._id }, { $set: { cart: cart } });
     await client.close();
-    thisSession.username.cart = cart;
+    thisSession.user.cart = cart;
     return true;
   }
 }
 
 //Check cart
 function inCart(item) {
-  const cart = thisSession.username.cart;
+  const cart = thisSession.user.cart;
   const included = (element) => element.name === item.name;
   return cart.some(included);
 }
