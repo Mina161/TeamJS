@@ -182,7 +182,7 @@ async function addToCart(item) {
       .updateOne({ _id: appUser._id }, { $set: { cart: cart } });
     await client.close();
     appUser.cart = cart;
-    return false;
+    return true;
   }
 }
 
