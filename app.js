@@ -27,6 +27,10 @@ app.get("/", (req, res) => {
   res.render("login");
 });
 
+app.get("/registration", (req, res) => {
+  res.render("registration");
+});
+
 const pages = [
   "books",
   "boxing",
@@ -35,7 +39,6 @@ const pages = [
   "iphone",
   "leaves",
   "phones",
-  "registration",
   "searchresults",
   "sports",
   "sun",
