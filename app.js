@@ -71,7 +71,7 @@ app.post("/", async function (req, res) {
 
 app.post("/register", async function (req, res) {
   var user = { username: req.body.username, password: req.body.password };
-  var created = await create(user);
+  var created = await create(user, req.session);
   created ? res.render("home") : res.render("registration");
 });
 
