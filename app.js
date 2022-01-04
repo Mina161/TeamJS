@@ -75,36 +75,6 @@ app.post("/register", async function (req, res) {
   created ? res.render("home") : res.render("registration");
 });
 
-app.post("/boxing", async function (req, res) {
-  added = await addToCart({ name: "Boxing Bag", ref: "boxing" },req.session);
-  if(added) res.render("cart", { cart: req.session.user.cart });
-});
-
-app.post("/galaxy", async function (req, res) {
-  added = await addToCart({ name: "Galaxy S21 Ultra", ref: "galaxy" },req.session);
-  if(added) res.render("cart", { cart: req.session.user.cart });
-});
-
-app.post("/iphone", async function (req, res) {
-  added = await addToCart({ name: "iPhone 13 Pro", ref: "iphone" },req.session);
-  if(added) res.render("cart", { cart: req.session.user.cart });
-});
-
-app.post("/leaves", async function (req, res) {
-  added = await addToCart({ name: "Leaves of Grass", ref: "leaves" },req.session);
-  if(added) res.render("cart", { cart: req.session.user.cart });
-});
-
-app.post("/sun", async function (req, res) {
-  added = await addToCart({ name: "The Sun and Her Flowers", ref: "sun" },req.session);
-  if(added) res.render("cart", { cart: req.session.user.cart });
-});
-
-app.post("/tennis", async function (req, res) {
-  added = await addToCart({ name: "Tennis Racket", ref: "tennis" },req.session);
-  if(added) res.render("cart", { cart: req.session.user.cart });
-});
-
 app.post('/search', async (req, res) => {
   let query = req.body.Search;
   let results = await searchFunction(query);
@@ -132,7 +102,8 @@ async function create(user, session) {
     await client
       .db("projectdb")
       .collection("users")
-      .insertOne({ ...user, cart: []});
+      .insertOne({ ...user});
+    await client.db("projectdb").createCollection(user.username);
     session.user = await client.db("projectdb").collection("users").findOne(user);
     session.save();
     created = true;
@@ -154,32 +125,39 @@ async function isUser(user, session) {
   return session.user !== null ? true : false;
 }
 
-//Update Cart
-async function addToCart(item, session) {
-  cart = session.user.cart;
-  if (inCart(item, session)) {
-    alert("Item already in cart")
-    return false;
-  } else {
-    await client.connect();
-    cart.push(item);
+async function addToCart(item, res, session) {
+  await client.connect();
+  try {
     await client
       .db("projectdb")
-      .collection("users")
-      .updateOne({ _id: session.user._id }, { $set: { cart: cart } });
-    await client.close();
-    session.user.cart = cart;
-    session.save();
-    return true;
+      .collection(session.user.username)
+      .insertOne({ _id: item });
+    res.status(200).send(`"${item}" has been added to your cart.`);
+  } catch (_) {
+    res.status(400).send(`"${item}" is already in your cart.`);
   }
+  await client.close();
 }
 
-//Check cart
-function inCart(item, session) {
-  const cart = session.user.cart;
-  const included = (element) => element.name === item.name;
-  return cart.some(included);
+const items = ["boxing", "galaxy", "iphone", "leaves", "sun", "tennis"];
+function addButtonEvent(item) {
+  app.post(`/${item}ToCart`, async (req, res) => {
+    await addToCart(item, res, req);
+  });
 }
+items.forEach(addButtonEvent);
+
+app.post("/viewCart", async (req, res) => {
+  await client.connect();
+  const cartItems = await client
+    .db("projectdb")
+    .collection(req.session.user.username)
+    .find({})
+    .map((item) => item._id)
+    .toArray();
+  res.render("cart", { data: cartItems.join(", ") });
+  await client.close();
+});
 
 //Search for items
 async function searchFunction(query){
