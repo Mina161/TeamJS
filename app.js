@@ -1,5 +1,6 @@
 var express = require("express");
 var path = require("path");
+var alerts = require("alert");
 var app = express();
 
 // view engine setup
@@ -9,7 +10,6 @@ app.set("view engine", "ejs");
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
-
 
 //GET Requests
 app.get("/", function (req, res) {
@@ -32,7 +32,7 @@ app.get("/boxing", function (req, res) {
 
 app.get("/cart", function (req, res) {
   if (appUser === null) res.render("login");
-  res.render("cart", {cart: appUser.cart});
+  res.render("cart", { cart: appUser.cart });
 });
 
 app.get("/galaxy", function (req, res) {
@@ -96,39 +96,39 @@ app.post("/register", async function (req, res) {
 });
 
 app.post("/boxing", async function (req, res) {
-  await addToCart({name:"Boxing Bag", ref:"boxing"})
-  res.render("cart", {cart: appUser.cart})
+  added = await addToCart({ name: "Boxing Bag", ref: "boxing" });
+  if(added) res.render("cart", { cart: appUser.cart });
 });
 
 app.post("/galaxy", async function (req, res) {
-  await addToCart({name:"Galaxy S21 Ultra", ref:"galaxy"})
-  res.render("cart", {cart: appUser.cart})
+  added = await addToCart({ name: "Galaxy S21 Ultra", ref: "galaxy" });
+  if(added) res.render("cart", { cart: appUser.cart });
 });
 
 app.post("/iphone", async function (req, res) {
-  await addToCart({name:"iPhone 13 Pro", ref:"iphone"})
-  res.render("cart", {cart: appUser.cart})
+  added = await addToCart({ name: "iPhone 13 Pro", ref: "iphone" });
+  if(added) res.render("cart", { cart: appUser.cart });
 });
 
 app.post("/leaves", async function (req, res) {
-  await addToCart({name:"Leaves of Grass", ref:"leaves"})
-  res.render("cart", {cart: appUser.cart})
+  added = await addToCart({ name: "Leaves of Grass", ref: "leaves" });
+  if(added) res.render("cart", { cart: appUser.cart });
 });
 
 app.post("/sun", async function (req, res) {
-  await addToCart({name:"The Sun and Her Flowers", ref:"sun"})
-  res.render("cart", {cart: appUser.cart})
+  added = await addToCart({ name: "The Sun and Her Flowers", ref: "sun" });
+  if(added) res.render("cart", { cart: appUser.cart });
 });
 
 app.post("/tennis", async function (req, res) {
-  await addToCart({name:"Tennis Racket", ref:"tennis"})
-  res.render("cart", {cart: appUser.cart})
+  added = await addToCart({ name: "Tennis Racket", ref: "tennis" });
+  if(added) res.render("cart", { cart: appUser.cart });
 });
 
-app.post("/search", async function(req,res){
+app.post("/search", async function (req, res) {
   var results = await search(req.body.Search);
-  res.render("searchresults",{results: results})
-})
+  res.render("searchresults", { results: results });
+});
 
 //App user and details
 var appUser = null;
@@ -150,7 +150,10 @@ async function create(user) {
     .collection("users")
     .findOne({ username: user.username });
   if (foundBefore === null) {
-    await client.db("projectdb").collection("users").insertOne({...user, cart: []});
+    await client
+      .db("projectdb")
+      .collection("users")
+      .insertOne({ ...user, cart: [] });
     appUser = await client.db("projectdb").collection("users").findOne(user);
   }
   return foundBefore === null ? true : false;
@@ -160,7 +163,7 @@ async function create(user) {
 async function isUser(user) {
   await client.connect();
   appUser = await client.db("projectdb").collection("users").findOne(user);
-  console.log(appUser)
+  console.log(appUser);
   return appUser !== null ? true : false;
 }
 
@@ -168,20 +171,38 @@ async function isUser(user) {
 async function addToCart(item) {
   await client.connect();
   cart = appUser.cart;
-  cart.push(item);
-  await client.db("projectdb").collection("users").updateOne({_id: appUser._id}, { $set: {cart: cart } });
-  await client.close();
-  appUser.cart = cart;
+  if (inCart(item)) {
+    alerts("Item already in cart")
+    return false;
+  } else {
+    cart.push(item);
+    await client
+      .db("projectdb")
+      .collection("users")
+      .updateOne({ _id: appUser._id }, { $set: { cart: cart } });
+    await client.close();
+    appUser.cart = cart;
+    return false;
+  }
+}
+
+//Check cart
+function inCart(item) {
+  const cart = appUser.cart;
+  const included = (element) => element.name === item.name;
+  return cart.some(included);
 }
 
 //Search for items
-async function search(query){
+async function search(query) {
   await client.connect();
-  var string = ".*"+query+".*"
-  console.log(string)
-  var results = await client.db("projectdb").collection("items").find({name: new RegExp(string,'i')}).toArray();
+  var string = ".*" + query + ".*";
+  var results = await client
+    .db("projectdb")
+    .collection("items")
+    .find({ name: new RegExp(string, "i") })
+    .toArray();
   await client.close();
-  console.log(results);
   return results;
 }
 
