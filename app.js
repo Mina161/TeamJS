@@ -14,11 +14,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(cookieParser());
 
-let thisSession;
 app.use(
   sessions({
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     secret: process.env.SECURE_KEY || "hihello",
   })
 );
@@ -46,15 +45,15 @@ const pages = [
 ];
 
 function renderPage(page) {
-  app.get(`/${page}`, (_, res) => {
-    if (thisSession.user === null) res.render("login");
+  app.get(`/${page}`, (req, res) => {
+    if (req.session.user === null) res.render("login");
     res.render(page);
   });
 }
 
 app.get("/cart", function (req, res) {
-  if (thisSession.user === null) res.render("login");
-  res.render("cart", { cart: thisSession.user.cart });
+  if (req.session.user === null) res.render("login");
+  res.render("cart", { cart: req.session.user.cart });
 });
 
 pages.forEach(renderPage);
@@ -63,47 +62,46 @@ pages.forEach(renderPage);
 
 app.post("/", async function (req, res) {
   var user = { username: req.body.username, password: req.body.password };
-  thisSession = req.session;
-  if (await isUser(user)) {
-    console.log(thisSession);
+  if (await isUser(user, req.session)) {
+    console.log(req.session);
     res.render("home");
   } else res.render("login");
 });
 
 app.post("/register", async function (req, res) {
   var user = { username: req.body.username, password: req.body.password };
-  var created = await create(user, req.session);
+  var created = await create(user);
   created ? res.render("home") : res.render("registration");
 });
 
 app.post("/boxing", async function (req, res) {
-  added = await addToCart({ name: "Boxing Bag", ref: "boxing" });
-  if(added) res.render("cart", { cart: thisSession.user.cart });
+  added = await addToCart({ name: "Boxing Bag", ref: "boxing" },req.session);
+  if(added) res.render("cart", { cart: req.session.user.cart });
 });
 
 app.post("/galaxy", async function (req, res) {
-  added = await addToCart({ name: "Galaxy S21 Ultra", ref: "galaxy" });
-  if(added) res.render("cart", { cart: thisSession.user.cart });
+  added = await addToCart({ name: "Galaxy S21 Ultra", ref: "galaxy" },req.session);
+  if(added) res.render("cart", { cart: req.session.user.cart });
 });
 
 app.post("/iphone", async function (req, res) {
-  added = await addToCart({ name: "iPhone 13 Pro", ref: "iphone" });
-  if(added) res.render("cart", { cart: thisSession.user.cart });
+  added = await addToCart({ name: "iPhone 13 Pro", ref: "iphone" },req.session);
+  if(added) res.render("cart", { cart: req.session.user.cart });
 });
 
 app.post("/leaves", async function (req, res) {
-  added = await addToCart({ name: "Leaves of Grass", ref: "leaves" });
-  if(added) res.render("cart", { cart: thisSession.user.cart });
+  added = await addToCart({ name: "Leaves of Grass", ref: "leaves" },req.session);
+  if(added) res.render("cart", { cart: req.session.user.cart });
 });
 
 app.post("/sun", async function (req, res) {
-  added = await addToCart({ name: "The Sun and Her Flowers", ref: "sun" });
-  if(added) res.render("cart", { cart: thisSession.user.cart });
+  added = await addToCart({ name: "The Sun and Her Flowers", ref: "sun" },req.session);
+  if(added) res.render("cart", { cart: req.session.user.cart });
 });
 
 app.post("/tennis", async function (req, res) {
-  added = await addToCart({ name: "Tennis Racket", ref: "tennis" });
-  if(added) res.render("cart", { cart: thisSession.user.cart });
+  added = await addToCart({ name: "Tennis Racket", ref: "tennis" },req.session);
+  if(added) res.render("cart", { cart: req.session.user.cart });
 });
 
 app.post('/search', async (req, res) => {
@@ -133,27 +131,24 @@ async function create(user, session) {
       .db("projectdb")
       .collection("users")
       .insertOne({ ...user, cart: []});
-      await client
-      .db("projectdb")
-      .collection("sessions")
-      .insertOne({userName: user.username, userSess: session});
-    thisSession.user = await client.db("projectdb").collection("users").findOne(user);
+    session.user = await client.db("projectdb").collection("users").findOne(user);
+    session.save();
   }
   return foundBefore === null ? true : false;
 }
 
 //Login user
-async function isUser(user) {
+async function isUser(user, session) {
   await client.connect();
-  thisSession = await client.db("projectdb").collection("sessions").findOne({userName: user.username});
-  thisSession.user = await client.db("projectdb").collection("users").findOne(user);
-  return thisSession.user !== null ? true : false;
+  session.user = await client.db("projectdb").collection("users").findOne(user);
+  session.save();
+  return session.user !== null ? true : false;
 }
 
 //Update Cart
-async function addToCart(item) {
-  cart = thisSession.user.cart;
-  if (inCart(item)) {
+async function addToCart(item, session) {
+  cart = session.user.cart;
+  if (inCart(item, session)) {
     alerts("Item already in cart")
     return false;
   } else {
@@ -162,16 +157,17 @@ async function addToCart(item) {
     await client
       .db("projectdb")
       .collection("users")
-      .updateOne({ _id: thisSession.user._id }, { $set: { cart: cart } });
+      .updateOne({ _id: session.user._id }, { $set: { cart: cart } });
     await client.close();
-    thisSession.user.cart = cart;
+    session.user.cart = cart;
+    session.save();
     return true;
   }
 }
 
 //Check cart
-function inCart(item) {
-  const cart = thisSession.user.cart;
+function inCart(item, session) {
+  const cart = session.user.cart;
   const included = (element) => element.name === item.name;
   return cart.some(included);
 }
